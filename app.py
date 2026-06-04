@@ -322,5 +322,5 @@ def ajuste_stock(pid):
 #  RUN
 # ─────────────────────────────────────────
 if __name__ == "__main__":
-    debug = os.environ.get("FLASK_DEBUG", "false").lower() == "true"
-    app.run(debug=debug)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
