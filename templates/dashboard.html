@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InventarioNR Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #080a10;
+    --bg2:       #0c0e18;
+    --surface:   #0f1420;
+    --surface2:  #141828;
+    --border:    #1c2035;
+    --border2:   #242840;
+    --accent:    #4f8ef7;
+    --accent2:   #7c5cf5;
+    --green:     #22c55e;
+    --amber:     #f59e0b;
+    --red:       #f04a5a;
+    --cyan:      #06b6d4;
+    --text:      #e2e8f0;
+    --text2:     #94a3b8;
+    --muted:     #475569;
+    --radius:    12px;
+    --sidebar-w: 240px;
+  }
+
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+
+  /* ── LAYOUT ─────────────────────────── */
+  .layout { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── SIDEBAR ────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    padding: 22px 20px 18px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; flex-shrink: 0;
+  }
+
+  .sidebar-logo-text { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .sidebar-logo-text span { color: var(--accent); }
+
+  .sidebar-section { padding: 16px 12px 8px; }
+  .sidebar-label { font-size: 10.5px; font-weight: 600; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background .15s, color .15s;
+    text-decoration: none;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(79,142,247,.12); color: var(--accent); }
+  .nav-item .icon { width: 20px; text-align: center; flex-shrink: 0; }
+
+  .nav-item .badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; }
+  .user-role { font-size: 11px; color: var(--muted); text-transform: capitalize; }
+
+  .logout-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px;
+    transition: color .15s;
+  }
+  .logout-btn:hover { color: var(--red); }
+
+  /* ── MAIN ───────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex; align-items: center; gap: 14px;
+    flex-shrink: 0;
+  }
+
+  .topbar-title { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; }
+
+  .search-wrap {
+    flex: 1; max-width: 380px; position: relative; margin-left: 20px;
+  }
+
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+  #searchInput {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 14px 9px 36px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  #searchInput:focus { border-color: var(--accent); }
+  #searchInput::placeholder { color: var(--muted); }
+
+  .topbar-actions { margin-left: auto; display: flex; gap: 8px; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff; border: none; border-radius: 9px;
+    padding: 9px 16px; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: opacity .2s, transform .15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* ── KPI CARDS ──────────────────────── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color .2s;
+  }
+
+  .kpi:hover { border-color: var(--border2); }
+
+  .kpi-header { display: flex; align-items: center; justify-content: space-between; }
+  .kpi-label { font-size: 12px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+
+  .kpi-icon {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+
+  .kpi-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 700; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: var(--muted); }
+
+  .kpi-accent  .kpi-icon { background: rgba(79,142,247,.15); }
+  .kpi-green   .kpi-icon { background: rgba(34,197,94,.15); }
+  .kpi-amber   .kpi-icon { background: rgba(245,158,11,.15); }
+  .kpi-red     .kpi-icon { background: rgba(240,74,90,.15); }
+
+  /* ── MID GRID ───────────────────────── */
+  .mid-grid { display: grid; grid-template-columns: 1fr 340px; gap: 16px; margin-bottom: 22px; }
+
+  /* ── PANEL ──────────────────────────── */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  .panel-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .panel-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+
+  .panel-body { padding: 16px 20px; }
+
+  /* ── TABLE ──────────────────────────── */
+  .tbl-wrap { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px; font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase; letter-spacing: .6px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    white-space: nowrap;
+  }
+
+  thead th:first-child { border-radius: 9px 0 0 0; }
+  thead th:last-child  { border-radius: 0 9px 0 0; }
+
+  tbody tr { transition: background .12s; }
+  tbody tr:hover { background: var(--surface2); }
+
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 13.5px;
+  }
+
+  td:first-child { color: var(--text); font-weight: 500; }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .badge-green  { background: rgba(34,197,94,.12);  color: var(--green); }
+  .badge-amber  { background: rgba(245,158,11,.12); color: var(--amber); }
+  .badge-red    { background: rgba(240,74,90,.12);  color: var(--red); }
+  .badge-blue   { background: rgba(79,142,247,.12); color: var(--accent); }
+  .badge-purple { background: rgba(124,92,245,.12); color: var(--accent2); }
+
+  .mono { font-family: 'DM Mono', monospace; font-size: 12.5px; color: var(--muted); }
+
+  .action-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 7px; padding: 5px 10px;
+    color: var(--text2); cursor: pointer; font-size: 12px;
+    transition: all .15s;
+  }
+
+  .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .action-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── CHART ──────────────────────────── */
+  #chart { max-height: 220px; }
+
+  /* ── ACTIVITY FEED ──────────────────── */
+  .feed-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .feed-item:last-child { border-bottom: none; }
+
+  .feed-dot {
+    width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+  }
+
+  .feed-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .feed-text strong { color: var(--text); }
+  .feed-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── LOW STOCK PANEL ────────────────── */
+  .low-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .low-item:last-child { border-bottom: none; }
+  .low-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .low-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .low-qty { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--red); }
+
+  /* ── TABS ───────────────────────────── */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+
+  .tab {
+    padding: 12px 20px;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    color: var(--muted); border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── MODALS ─────────────────────────── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    width: 560px;
+    max-width: 96vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 40px 80px rgba(0,0,0,.6);
+    animation: modalIn .25s ease both;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(.95) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-head {
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+
+  .modal-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 20px;
+    transition: color .15s;
+  }
+
+  .modal-close:hover { color: var(--red); }
+
+  .modal-body { padding: 22px 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-col { display: flex; flex-direction: column; gap: 5px; }
+  .form-col.full { grid-column: 1 / -1; }
+
+  .form-label { font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+  .form-input, .form-select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 13px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-input::placeholder { color: var(--muted); }
+  .form-select { cursor: pointer; }
+  .form-select option { background: var(--surface2); }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 9px; padding: 9px 18px;
+    color: var(--text2); cursor: pointer; font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .15s;
+  }
+
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+
+  .btn-danger {
+    background: rgba(240,74,90,.15);
+    border: 1px solid rgba(240,74,90,.3);
+    color: var(--red);
+    border-radius: 9px; padding: 9px 18px;
+    cursor: pointer; font-size: 13.5px;
+    transition: all .15s;
+  }
+
+  .btn-danger:hover { background: rgba(240,74,90,.25); }
+
+  /* ── NOTIFICATION TOAST ─────────────── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-left: 4px solid var(--green);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    animation: slideIn .3s ease;
+    max-width: 320px;
+  }
+
+  .toast.error { border-left-color: var(--red); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── EMPTY STATE ────────────────────── */
+  .empty {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">📦</div>
+      <div class="sidebar-logo-text">Inventario<span>NR</span></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <a class="nav-item active" href="#" onclick="showTab('dashboard')">
+        <span class="icon">⬛</span> Dashboard
+      </a>
+      <a class="nav-item" href="#" onclick="showTab('productos')">
+        <span class="icon">🗂</span> Productos
+      </a>
+      <a class="nav-item" href="#" onclick="showTab('movimientos')">
+        <span class="icon">🔄</span> Movimientos
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Alertas</div>
+      <a class="nav-item" href="#" onclick="showTab('bajostock')">
+        <span class="icon">⚠️</span> Bajo stock
+        {% if bajo_stock %}<span class="badge">{{ bajo_stock|length }}</span>{% endif %}
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar">{{ session.user[0]|upper }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ session.user }}</div>
+          <div class="user-role">{{ session.rol }}</div>
+        </div>
+        <a href="/logout"><button class="logout-btn" title="Cerrar sesión">⏏</button></a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ───────────────────────── -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="searchInput" type="text" placeholder="Buscar producto, SKU, categoría…">
+      </div>
+      <div class="topbar-actions">
+        <button class="btn-primary" onclick="openModal('addModal')">
+          ＋ Nuevo Producto
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- ─────────── DASHBOARD TAB ─────────── -->
+      <div id="tab-dashboard">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+          <div class="toast {% if cat == 'error' %}error{% endif %}" id="flashMsg">{{ msg }}</div>
+          {% endfor %}
+          <script>setTimeout(()=>{ const el=document.getElementById('flashMsg'); if(el) el.remove(); }, 4000);</script>
+        {% endif %}
+        {% endwith %}
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi kpi-accent">
+            <div class="kpi-header">
+              <div class="kpi-label">Total Productos</div>
+              <div class="kpi-icon">📦</div>
+            </div>
+            <div class="kpi-value">{{ total_productos }}</div>
+            <div class="kpi-sub">SKUs activos en inventario</div>
+          </div>
+          <div class="kpi kpi-green">
+            <div class="kpi-header">
+              <div class="kpi-label">Valor Inventario</div>
+              <div class="kpi-icon">💰</div>
+            </div>
+            <div class="kpi-value">${{ "%.0f"|format(valor_inventario) }}</div>
+            <div class="kpi-sub">Precio de venta × stock</div>
+          </div>
+          <div class="kpi kpi-amber">
+            <div class="kpi-header">
+              <div class="kpi-label">Costo Total</div>
+              <div class="kpi-icon">📊</div>
+            </div>
+            <div class="kpi-value">${{ "%.0f"|format(costo_inventario) }}</div>
+            <div class="kpi-sub">Costo × stock actual</div>
+          </div>
+          <div class="kpi kpi-red">
+            <div class="kpi-header">
+              <div class="kpi-label">Bajo Stock</div>
+              <div class="kpi-icon">⚠️</div>
+            </div>
+            <div class="kpi-value">{{ bajo_stock|length }}</div>
+            <div class="kpi-sub">Productos bajo mínimo</div>
+          </div>
+        </div>
+
+        <!-- Mid row -->
+        <div class="mid-grid">
+          <!-- Recent products table -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Inventario reciente</div>
+              <button class="action-btn" onclick="showTab('productos')">Ver todo →</button>
+            </div>
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Categoría</th>
+                    <th>Stock</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in productos[:8] %}
+                  <tr>
+                    <td>
+                      {{ p.nombre }}
+                      {% if p.sku %}<div class="mono">{{ p.sku }}</div>{% endif %}
+                    </td>
+                    <td><span class="badge badge-blue">{{ p.categoria or '—' }}</span></td>
+                    <td>{{ p.cantidad }}</td>
+                    <td>${{ "%.2f"|format(p.precio) }}</td>
+                    <td>
+                      {% if p.cantidad <= p.stock_min %}
+                        <span class="badge badge-red">⚡ Bajo</span>
+                      {% elif p.cantidad <= p.stock_min * 2 %}
+                        <span class="badge badge-amber">Medio</span>
+                      {% else %}
+                        <span class="badge badge-green">OK</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Sin productos aún</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Chart -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Por categoría</div>
+            </div>
+            <div class="panel-body">
+              {% if categorias %}
+              <canvas id="chart"></canvas>
+              {% else %}
+              <div class="empty"><div class="empty-icon">📈</div><div class="empty-text">Sin datos</div></div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity + Low stock -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <!-- Activity -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">Actividad reciente</div>
+            </div>
+            <div class="panel-body">
+              {% for m in movimientos %}
+              <div class="feed-item">
+                <div class="feed-dot" style="background:{% if m.tipo=='entrada' %}var(--green){% else %}var(--red){% endif %}"></div>
+                <div>
+                  <div class="feed-text">
+                    <strong>{{ m.tipo|title }}</strong> de <strong>{{ m.cantidad }}</strong> u. — {{ m.prod_nombre }}
+                  </div>
+                  <div class="feed-time">{{ m.usuario }} · {{ m.fecha[:16] }}</div>
+                </div>
+              </div>
+              {% else %}
+              <div class="empty"><div class="empty-text" style="padding:20px 0">Sin movimientos</div></div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Low stock -->
+          <div class="panel">
+            <div class="panel-head">
+              <div class="panel-title">⚠️ Bajo stock</div>
+            </div>
+            <div class="panel-body">
+              {% for p in bajo_stock %}
+              <div class="low-item">
+                <div>
+                  <div class="low-name">{{ p.nombre }}</div>
+                  <div class="low-meta">Min: {{ p.stock_min }} u · {{ p.categoria or '—' }}</div>
+                </div>
+                <div class="low-qty">{{ p.cantidad }}</div>
+              </div>
+              {% else %}
+              <div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Todo en orden</div></div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ─────────── PRODUCTOS TAB ──────────── -->
+      <div id="tab-productos" style="display:none">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Todos los productos</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select id="filterCat" class="form-select" style="width:160px;padding:7px 11px" onchange="loadProductos()">
+                <option value="">Todas las categorías</option>
+                {% for cat in categorias %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto / SKU</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>Precio</th>
+                  <th>Costo</th>
+                  <th>Margen</th>
+                  <th>Ubicación</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="productosTable">
+                <tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────── MOVIMIENTOS TAB ───────── -->
+      <div id="tab-movimientos" style="display:none">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Historial de movimientos</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Tipo</th>
+                  <th>Cantidad</th>
+                  <th>Nota</th>
+                  <th>Usuario</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for m in movimientos %}
+                <tr>
+                  <td>{{ m.prod_nombre }}</td>
+                  <td>
+                    <span class="badge {% if m.tipo=='entrada' %}badge-green{% else %}badge-red{% endif %}">
+                      {% if m.tipo == 'entrada' %}↑{% else %}↓{% endif %} {{ m.tipo|title }}
+                    </span>
+                  </td>
+                  <td><strong>{{ m.cantidad }}</strong> u.</td>
+                  <td style="color:var(--muted)">{{ m.nota or '—' }}</td>
+                  <td>{{ m.usuario }}</td>
+                  <td class="mono">{{ m.fecha[:16] }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Sin movimientos</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────── BAJO STOCK TAB ─────────── -->
+      <div id="tab-bajostock" style="display:none">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">⚠️ Productos bajo stock mínimo</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>SKU</th>
+                  <th>Stock actual</th>
+                  <th>Stock mínimo</th>
+                  <th>Proveedor</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in bajo_stock %}
+                <tr>
+                  <td>{{ p.nombre }}</td>
+                  <td class="mono">{{ p.sku or '—' }}</td>
+                  <td><span class="badge badge-red">{{ p.cantidad }} u.</span></td>
+                  <td>{{ p.stock_min }} u.</td>
+                  <td>{{ p.proveedor or '—' }}</td>
+                  <td>
+                    <button class="action-btn" onclick="openAjuste({{ p.id }}, '{{ p.nombre }}', {{ p.cantidad }})">Ajustar stock</button>
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6"><div class="empty"><div class="empty-icon">✅</div><div class="empty-text">No hay productos con bajo stock</div></div></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+
+<!-- ══════════ MODAL: AGREGAR ══════════ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Nuevo Producto</div>
+      <button class="modal-close" onclick="closeModal('addModal')">×</button>
+    </div>
+    <form action="/agregar" method="POST">
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-col full">
+          <label class="form-label">Nombre del producto *</label>
+          <input class="form-input" name="nombre" placeholder="Ej: Camiseta Polo Azul M" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">SKU</label>
+          <input class="form-input" name="sku" placeholder="CAM-001-AZ">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Categoría *</label>
+          <input class="form-input" name="categoria" placeholder="Ropa, Electrónica…" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Cantidad inicial *</label>
+          <input class="form-input" name="cantidad" type="number" min="0" placeholder="0" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Stock mínimo</label>
+          <input class="form-input" name="stock_min" type="number" min="0" value="5">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Precio de venta *</label>
+          <input class="form-input" name="precio" type="number" step="0.01" min="0" placeholder="0.00" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Costo de compra</label>
+          <input class="form-input" name="costo" type="number" step="0.01" min="0" placeholder="0.00">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Ubicación</label>
+          <input class="form-input" name="ubicacion" placeholder="Bodega A, Estante 3">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Proveedor</label>
+          <input class="form-input" name="proveedor" placeholder="Nombre del proveedor">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" onclick="closeModal('addModal')">Cancelar</button>
+      <button type="submit" class="btn-primary">Guardar producto</button>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: EDITAR ══════════ -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Editar Producto</div>
+      <button class="modal-close" onclick="closeModal('editModal')">×</button>
+    </div>
+    <form id="editForm" method="POST">
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-col full">
+          <label class="form-label">Nombre del producto *</label>
+          <input class="form-input" id="edit_nombre" name="nombre" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">SKU</label>
+          <input class="form-input" id="edit_sku" name="sku">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Categoría</label>
+          <input class="form-input" id="edit_categoria" name="categoria">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Cantidad *</label>
+          <input class="form-input" id="edit_cantidad" name="cantidad" type="number" min="0" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Stock mínimo</label>
+          <input class="form-input" id="edit_stock_min" name="stock_min" type="number" min="0">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Precio de venta *</label>
+          <input class="form-input" id="edit_precio" name="precio" type="number" step="0.01" min="0" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Costo de compra</label>
+          <input class="form-input" id="edit_costo" name="costo" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Ubicación</label>
+          <input class="form-input" id="edit_ubicacion" name="ubicacion">
+        </div>
+        <div class="form-col">
+          <label class="form-label">Proveedor</label>
+          <input class="form-input" id="edit_proveedor" name="proveedor">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-danger" id="deleteBtn">Eliminar</button>
+      <button type="button" class="btn-ghost" onclick="closeModal('editModal')">Cancelar</button>
+      <button type="submit" class="btn-primary">Guardar cambios</button>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: AJUSTE STOCK ══════════ -->
+<div class="modal-overlay" id="ajusteModal">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <div class="modal-title" id="ajusteTitle">Ajustar Stock</div>
+      <button class="modal-close" onclick="closeModal('ajusteModal')">×</button>
+    </div>
+    <form id="ajusteForm" method="POST">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;cursor:pointer;transition:background .15s" id="btnEntrada" onclick="setTipo('entrada')">
+          <input type="radio" name="tipo" value="entrada" style="display:none">
+          <span style="font-size:18px">↑</span>
+          <span style="font-size:13px;font-weight:600">Entrada</span>
+        </label>
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;cursor:pointer;transition:background .15s;border-left:1px solid var(--border)" id="btnSalida" onclick="setTipo('salida')">
+          <input type="radio" name="tipo" value="salida" style="display:none">
+          <span style="font-size:18px">↓</span>
+          <span style="font-size:13px;font-weight:600">Salida</span>
+        </label>
+      </div>
+      <div class="form-col">
+        <label class="form-label">Stock actual</label>
+        <input class="form-input" id="ajusteActual" disabled>
+      </div>
+      <div class="form-col">
+        <label class="form-label">Cantidad a ajustar *</label>
+        <input class="form-input" name="cantidad" type="number" min="1" placeholder="0" required>
+      </div>
+      <div class="form-col">
+        <label class="form-label">Nota / motivo</label>
+        <input class="form-input" name="nota" placeholder="Ej: Reposición de proveedor">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" onclick="closeModal('ajusteModal')">Cancelar</button>
+      <button type="submit" class="btn-primary">Aplicar ajuste</button>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ MODAL: CONFIRMAR ELIMINAR ══════════ -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="width:380px">
+    <div class="modal-head">
+      <div class="modal-title">Confirmar eliminación</div>
+      <button class="modal-close" onclick="closeModal('confirmModal')">×</button>
+    </div>
+    <div class="modal-body" style="color:var(--text2);font-size:14px;line-height:1.6">
+      ¿Estás seguro que deseas eliminar este producto? Esta acción no se puede deshacer.
+    </div>
+    <div class="modal-footer">
+      <form id="deleteForm" method="POST">
+        <input type="hidden" name="_method" value="POST">
+        <button type="button" class="btn-ghost" onclick="closeModal('confirmModal')">Cancelar</button>
+        <button type="submit" class="btn-danger">Sí, eliminar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── CHART ────────────────────────────────
+const catLabels = {{ categorias.keys()|list|tojson }};
+const catData   = {{ categorias.values()|list|tojson }};
+
+if (catLabels.length) {
+  new Chart(document.getElementById('chart'), {
+    type: 'doughnut',
+    data: {
+      labels: catLabels,
+      datasets: [{
+        data: catData,
+        backgroundColor: ['#4f8ef7','#7c5cf5','#22c55e','#f59e0b','#f04a5a','#06b6d4'],
+        borderWidth: 0,
+        spacing: 2,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 11 }, padding: 12, boxWidth: 10, boxHeight: 10 }
+        }
+      }
+    }
+  });
+}
+
+// ── TABS ─────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = '';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('topbarTitle').textContent =
+    { dashboard:'Dashboard', productos:'Productos', movimientos:'Movimientos', bajostock:'Bajo Stock' }[name];
+  if (name === 'productos') loadProductos();
+}
+
+// ── LOAD PRODUCTOS (API) ──────────────────
+function loadProductos() {
+  const q   = document.getElementById('searchInput').value;
+  const cat = document.getElementById('filterCat')?.value || '';
+  fetch(`/api/productos?q=${encodeURIComponent(q)}&categoria=${encodeURIComponent(cat)}`)
+    .then(r => r.json())
+    .then(data => {
+      const tb = document.getElementById('productosTable');
+      if (!data.length) {
+        tb.innerHTML = `<tr><td colspan="9"><div class="empty"><div class="empty-icon">📦</div><div class="empty-text">No se encontraron productos</div></div></td></tr>`;
+        return;
+      }
+      tb.innerHTML = data.map(p => {
+        const margen = p.precio > 0 && p.costo > 0
+          ? Math.round((1 - p.costo / p.precio) * 100) + '%'
+          : '—';
+        const estado = p.cantidad <= p.stock_min
+          ? `<span class="badge badge-red">⚡ Bajo</span>`
+          : p.cantidad <= p.stock_min * 2
+            ? `<span class="badge badge-amber">Medio</span>`
+            : `<span class="badge badge-green">OK</span>`;
+        return `
+        <tr>
+          <td>${esc(p.nombre)}<div class="mono">${esc(p.sku || '')}</div></td>
+          <td><span class="badge badge-blue">${esc(p.categoria || '—')}</span></td>
+          <td><strong>${p.cantidad}</strong></td>
+          <td>$${(+p.precio).toFixed(2)}</td>
+          <td>$${(+p.costo).toFixed(2)}</td>
+          <td>${margen}</td>
+          <td style="color:var(--muted)">${esc(p.ubicacion || '—')}</td>
+          <td>${estado}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="action-btn" onclick="openEdit(${JSON.stringify(p).replace(/"/g,'&quot;')})">Editar</button>
+              <button class="action-btn" onclick="openAjuste(${p.id},'${esc(p.nombre)}',${p.cantidad})">Ajuste</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    });
+}
+
+// ── SEARCH ────────────────────────────────
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadProductos, 280);
+});
+
+// ── MODALS ────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ── OPEN EDIT ────────────────────────────
+function openEdit(p) {
+  document.getElementById('editForm').action = `/editar/${p.id}`;
+  document.getElementById('edit_nombre').value   = p.nombre;
+  document.getElementById('edit_sku').value       = p.sku || '';
+  document.getElementById('edit_categoria').value = p.categoria || '';
+  document.getElementById('edit_cantidad').value  = p.cantidad;
+  document.getElementById('edit_precio').value    = p.precio;
+  document.getElementById('edit_costo').value     = p.costo;
+  document.getElementById('edit_ubicacion').value = p.ubicacion || '';
+  document.getElementById('edit_proveedor').value = p.proveedor || '';
+  document.getElementById('edit_stock_min').value = p.stock_min;
+  document.getElementById('deleteBtn').onclick = () => {
+    document.getElementById('deleteForm').action = `/eliminar/${p.id}`;
+    closeModal('editModal');
+    openModal('confirmModal');
+  };
+  openModal('editModal');
+}
+
+// ── AJUSTE STOCK ──────────────────────────
+let ajusteTipo = 'entrada';
+function openAjuste(id, nombre, actual) {
+  document.getElementById('ajusteForm').action = `/ajuste/${id}`;
+  document.getElementById('ajusteTitle').textContent = `Ajustar Stock — ${nombre}`;
+  document.getElementById('ajusteActual').value = actual + ' unidades';
+  setTipo('entrada');
+  openModal('ajusteModal');
+}
+
+function setTipo(tipo) {
+  ajusteTipo = tipo;
+  const btn = document.getElementById('btn' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+  const other = document.getElementById(tipo === 'entrada' ? 'btnSalida' : 'btnEntrada');
+  btn.style.background = 'rgba(79,142,247,.15)';
+  btn.style.color = 'var(--accent)';
+  btn.querySelector('input').checked = true;
+  other.style.background = '';
+  other.style.color = '';
+}
+
+// ── UTILS ─────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
